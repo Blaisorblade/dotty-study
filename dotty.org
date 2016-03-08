@@ -1,5 +1,7 @@
 #+STARTUP: indent
 
+* Questions
+** Where and how libraries are used?
 * Concepts
 ** Tasty
 ** miniphases
@@ -172,11 +174,6 @@ A type tree that represents an existing or inferred type
 * Phases
 Defined in =Compiler=.
 
-** FrontEnd
-- parse          :: parse code
-- enterSyms      :: index sysmbols
-- typeCheck      :: type checking
-
 #+BEGIN_SRC Scala
   def phases: List[List[Phase]] =
     List(
@@ -229,6 +226,494 @@ Defined in =Compiler=.
     )
 #+END_SRC
 
+** FrontEnd                                                       :important:
+1. parse          :: parse code
+2. enterSyms      :: index sysmbols
+3. typeCheck      :: type checking
+** PostTyper
+A macro transform that runs immediately after typer and that performs
+the following functions:
+
+1. Add super accessors and protected accessors (@see SuperAccessors)
+2. Convert parameter fields that have the same name as a corresponding
+   public parameter field in a superclass to a forwarder to the
+   superclass field (corresponding = super class field is initialized
+   with subclass field) (@see ForwardParamAccessors)
+3. Add synthetic methods (@see SyntheticMethods)
+4. Check that `New` nodes can be instantiated, and that annotations are valid
+5. Convert all trees representing types to TypeTrees.
+6. Check the bounds of AppliedTypeTrees
+7. Insert `.package` for selections of package object members
+8. Replaces self references by name with =this=
+
+The reason for making this a macro transform is that some functions
+(in particular super and protected accessors and instantiation checks)
+are naturally top-down and don't lend themselves to the bottom-up
+approach of a mini phase. The other two functions (forwarding param
+accessors and synthetic methods) only apply to templates and fit
+mini-phase or subfunction of a macro phase equally well. But taken by
+themselves they do not warrant their own group of miniphases before
+pickling.
+** Pickler
+Serialize symbol tables
+** +
+*** FirstTransform
+1. ensures there are companion objects for all classes except module classes
+2. eliminates some kinds of trees: Imports, NamedArgs
+3. stubs out native methods
+*** CheckReentrant
+A no-op transform that checks whether the compiled sources are re-entrant.
+** +
+*** RefChecks
+1. overrides and inheritance checks
+2. warns about references to symbols labeled deprecated or migration
+3. constant propagation for =if=
+*** ElimRepeated
+Removes repeated parameters (T*) from all types, replacing them with Seq types.
+*** NormalizeFlags
+1. Widens all private[this] and protected[this] qualifiers to just
+   private/protected
+2. Sets PureInterface flag for traits that only have pure interface
+   members and that do not have initialization code. A pure interface
+   member is either an abstract or alias type definition or a deferred
+   val or def.
+*** ExtensionMethods
+Creates extension methods for all methods in a value class, except
+parameter or super accessors, or constructors.
+*** ExpandSAMs
+Expand SAM closures that cannot be represented by the JVM as lambdas
+to anonymous classes.
+
+SAM Type: single abstract method types
+
+A type is a *SAM type* if it is a reference to a class or trait, which
+
+- has a single abstract method with a method type (ExprType and
+  PolyType not allowed!)
+- can be instantiated without arguments or with just () as argument.
+
+*** TailRec
+Tail call elimination
+*** LiftTry
+Lifts try's that might be executed on non-empty expression stacks to
+their own methods. I.e.
+
+    try body catch handler
+
+is lifted to
+
+    { def liftedTree$n() = try body catch handler; liftedTree$n() }
+
+*** ClassOf
+Rewrite `classOf` calls as follow:
+
+- For every primitive class C whose boxed class is called B:
+
+  classOf[C]    -> B.TYPE
+
+- For every non-primitive class D:
+
+  classOf[D]    -> Literal(Constant(erasure(D)))
+** +
+*** PatternMatcher
+Eliminates patterns.
+*** ExplicitOuter
+Adds outer accessors to classes and traits that need them.
+*** ExplicitSelf
+Transforms references of the form
+
+    C.this.m
+
+where `C` is a class with explicit self type and `C` is not a subclass
+of the owner of `m` to
+
+   C.this.asInstanceOf[S].m
+
+where `S` is the self type of `C`.
+
+*** CrossCastAnd
+Makes sure that all private member selections from AndTypes are
+performed from the first component of AndType.
+
+*** Splitter
+Makes sure every identifier and select node carries a symbol. To do
+this, certain qualifiers with a union type have to be "splitted" with
+a type test.
+
+For now, only self references are treated.
+
+If we select a name, make sure the node has a symbol. If necessary,
+split the qualifier with type tests.  Example: Assume:
+
+    class A { def f(x: S): T }
+    class B { def f(x: S): T }
+    def p(): A | B
+
+Then =p().f(a)= translates to
+
+    val ev$1 = p()
+    if (ev$1.isInstanceOf[A]) ev$1.asInstanceOf[A].f(a)
+    else ev$1.asInstanceOf[B].f(a)
+
+** +
+*** VCInlineMethods
+Inlines calls to methods of value classes.
+*** SeqLiterals
+Eliminates SeqLiteral's, transforming =SeqLiteral(elems)= to an
+operation equivalent to
+
+    JavaSeqLiteral(elems).toSeq
+
+Instead of =toSeq=, which takes an implicit, the appropriate
+"wrapArray" method is called directly. The reason for this step is
+that JavaSeqLiterals, being arrays keep a precise type after erasure,
+whereas SeqLiterals only get the erased type =Seq=.
+
+*** InterceptedMethods
+Replace member references as follows:
+
+- `x != y` for != in class Any becomes `!(x == y)` with == in class Any.
+- `x.##` for ## in NullClass becomes `0`
+- `x.##` for ## in Any becomes calls to ScalaRunTime.hash, using the
+  most precise overload available
+- `x.getClass` for getClass in primitives becomes `x.getClass` with
+  getClass in class Object.
+
+*** Getters
+Performs the following rewritings for fields of a class:
+
+  <mods> val x: T = e
+    -->  <mods> <stable> <accessor> def x: T = e
+  <mods> var x: T = e
+    -->  <mods> <accessor> def x: T = e
+
+  <mods> val x: T
+    -->  <mods> <stable> <accessor> def x: T
+
+  <mods> lazy val x: T = e
+    -->  <mods> <accessor> lazy def x: T =e
+
+  <mods> var x: T
+    -->  <mods> <accessor> def x: T
+
+  <mods> non-static <module> val x$ = e
+    -->  <mods> <module> <accessor> def x$ = e
+
+Omitted from the rewritings are
+
+ - private[this] fields in classes (excluding traits, value classes)
+ - fields generated for static modules (TODO: needed?)
+ - parameters, static fields, and fields coming from Java
+
+Furthermore, assignments to mutable vars are replaced by setter calls
+
+   p.x = e
+    -->  p.x_=(e)
+
+No fields are generated yet. This is done later in phase Memoize.
+
+*** ElimByName
+This phase eliminates ExprTypes `=> T` as types of function
+parameters, and replaces them by nullary function types. More
+precisely:
+
+For the types of parameter symbols:
+
+    => T        ==>    () => T
+
+Note that `=> T` types are not eliminated in MethodTypes. This is done
+later at erasure.  Terms are rewritten as follows:
+
+    x           ==>    x.apply()   if x is a parameter that had type => T
+
+Arguments to call-by-name parameters are translated as follows. First,
+the argument is rewritten by the rules:
+
+1. if e.apply() is an argument to a call-by-name parameter
+
+    e.apply()   ==>    e
+
+2.  if other expr is an argument to a call-by-name parameter
+
+    expr        ==>    () => expr
+
+This makes the argument compatible with a parameter type of () => T,
+which will be the formal parameter type at erasure. But to be
+-Ycheckable until then, any argument ARG rewritten by the rules above
+is again wrapped in an application DummyApply(ARG) where
+
+   DummyApply: [T](() => T): T
+
+is a synthetic method defined in Definitions. Erasure will later strip
+these DummyApply wrappers.
+
+Note: This scheme to have inconsistent types between method types
+(whose formal types are still ExprTypes and parameter valdefs (which
+are now FunctionTypes) is not pretty. There are two other options
+which have been abandoned or not yet pursued.
+
+Option 1: Transform => T to () => T also in method and function
+types. The problem with this is that is that it requires to look at
+every type, and this forces too much, causing Cyclic Reference
+errors. Abandoned for this reason.
+
+Option 2: Merge ElimByName with erasure, or have it run immediately
+before. This has not been tried yet.
+
+*** AugmentScala2Traits
+Augments Scala2 traits with implementation classes and with additional
+members needed for mixin composition.
+
+These symbols would have been added between Unpickling and Mixin in
+the Scala2 pipeline. Specifcally, it adds
+
+- an implementation class which defines a trait constructor and trait
+  method implementations
+- trait setters for vals defined in traits
+
+Furthermore, it expands the names of all private getters and setters
+as well as super accessors in the trait and makes them not-private.
+
+*** ResolveSuper
+Adds super accessors and method overrides where linearization differs
+from Java's rule for default methods in interfaces. In particular:
+
+    For every trait M directly implemented by the class (see
+    SymUtils.mixin), in reverse linearization order, add the
+    following definitions to C:
+
+      3.1 (done in `superAccessors`) For every superAccessor
+          `<mods> def super$f[Ts](ps1)...(psN): U` in M:
+
+            <mods> def super$f[Ts](ps1)...(psN): U = super[S].f[Ts](ps1)...(psN)
+
+          where `S` is the superclass of `M` in the linearization of `C`.
+
+      3.2 (done in `methodOverrides`) For every method
+          `<mods> def f[Ts](ps1)...(psN): U` in M` that needs to be disambiguated:
+
+            <mods> def f[Ts](ps1)...(psN): U = super[M].f[Ts](ps1)...(psN)
+
+    A method in M needs to be disambiguated if it is concrete, not overridden in C,
+    and if it overrides another concrete method.
+
+This is the first part of what was the mixin phase. It is complemented
+by Mixin, which runs after erasure.
+
+** Erasure                                                        :important:
+Erases parameteric types
+** +
+*** ElimErasedValueType
+Erases ErasedValueType to their underlying type.  It also removes the
+synthetic cast methods u2evt$ and evt2u$ which are no longer needed
+afterwards.
+
+*** VCElideAllocations
+This phase elides unnecessary value class allocations
+
+For a value class V defined as:
+
+  class V(val underlying: U) extends AnyVal
+
+we avoid unnecessary allocations:
+
+   new V(u1) == new V(u2) => u1 == u2
+  (new V(u)).underlying() => u
+
+*** Mixin
+This phase performs the following transformations:
+
+1. (done in `traitDefs` and `transformSym`) Map every concrete trait getter
+
+       <mods> def x(): T = expr
+
+   to the pair of definitions:
+
+       <mods> def x(): T
+       protected def initial$x(): T = { stats; expr }
+
+   where `stats` comprises all statements between either the start of
+   the trait or the previous field definition which are not
+   definitions (i.e. are executed for their side effects).
+
+2. (done in `traitDefs`) Make every concrete trait setter
+
+       <mods> def x_=(y: T) = ()
+
+   deferred by mapping it to
+
+       <mods> def x_=(y: T)
+
+3. For a non-trait class C:
+
+     For every trait M directly implemented by the class (see SymUtils.mixin), in
+     reverse linearization order, add the following definitions to C:
+
+       3.1 (done in `traitInits`) For every parameter accessor `<mods> def x(): T` in M,
+           in order of textual occurrence, add
+
+            <mods> def x() = e
+
+           where `e` is the constructor argument in C that corresponds to `x`. Issue
+           an error if no such argument exists.
+
+       3.2 (done in `traitInits`) For every concrete trait getter `<mods> def x(): T` in M
+           which is not a parameter accessor, in order of textual occurrence, produce the following:
+
+           3.2.1 If `x` is also a member of `C`, and M is a Dotty trait:
+
+             <mods> def x(): T = super[M].initial$x()
+
+           3.2.2 If `x` is also a member of `C`, and M is a Scala 2.x trait:
+
+             <mods> def x(): T = _
+
+           3.2.3 If `x` is not a member of `C`, and M is a Dotty trait:
+
+             super[M].initial$x()
+
+           3.2.4 If `x` is not a member of `C`, and M is a Scala2.x trait, nothing gets added.
+
+       3.3 (done in `superCallOpt`) The call:
+
+             super[M].<init>
+
+       3.4 (done in `setters`) For every concrete setter `<mods> def x_=(y: T)` in M:
+
+             <mods> def x_=(y: T) = ()
+
+4. (done in `transformTemplate` and `transformSym`) Drop all
+   parameters from trait constructors.
+
+5. (done in `transformSym`) Drop ParamAccessor flag from all parameter
+   accessors in traits.
+
+Conceptually, this is the second half of the previous mixin phase. It
+needs to run after erasure because it copies references to possibly
+private inner classes and objects into enclosing classes where they
+are not visible. This can only be done if all references are symbolic.
+
+*** TODO LazyVals
+Transform lazy vals
+*** Memoize
+Provides the implementations of all getters and setters, introducing
+fields to hold the value accessed by them.
+
+TODO: Make LazyVals a part of this phase?
+
+  <accessor> <stable> <mods> def x(): T = e
+    -->  private val x: T = e
+         <accessor> <stable> <mods> def x(): T = x
+
+  <accessor> <mods> def x(): T = e
+    -->  private var x: T = e
+         <accessor> <mods> def x(): T = x
+
+  <accessor> <mods> def x_=(y: T): Unit = ()
+    --> <accessor> <mods> def x_=(y: T): Unit = x = y
+
+*** LinkScala2ImplClasses
+Rewrites calls
+
+  super[M].f(args)
+
+where M is a Scala2 trait implemented by the current class to
+
+  M$class.f(this, args)
+
+provided the implementation class M$class defines a corresponding
+function `f`.
+
+*** NonLocalReturns
+Implements non-local returns using NonLocalReturnControl exceptions.
+*** TODO CapturedVars
+*** Constructors
+- moves initializers from body to constructor.
+- makes all supercalls explicit
+- also moves private fields that are accessed only from constructor
+  into the constructor if possible.
+*** FunctionalInterfaces
+Rewires closures to implement more specific types of Functions.
+*** GetClass
+Rewrite `getClass` calls as follow:
+
+- For every instance of primitive class C whose boxed class is called B:
+
+     instanceC.getClass    -> B.TYPE
+
+- For every instance of non-primitive class D:
+
+     instanceD.getClass    -> instanceD.getClass
+** +
+*** LambdaLift                                                    :important:
+Lifts lambdas to top level
+*** ElimStaticThis
+Replace `This` references to module classes in static methods by
+global identifiers to the corresponding modules.
+*** Flatten
+Lifts nested classes to toplevel
+*** RestoreScopes
+The preceding lambda lift and flatten phases move symbols to different
+scopes and rename them. This miniphase cleans up afterwards and makes
+sure that all class scopes contain the symbols defined in them.
+
+** +
+*** ExpandPrivate
+Make private term members that are accessed from another class
+non-private by resetting the Private flag and expanding their name.
+
+Also, make non-private any private parameter forwarders that forward
+to an inherited public or protected parameter accessor with the same
+name as the forwarder.  This is necessary since private methods are
+not allowed to have the same name as inherited public ones.
+
+See discussion in https://github.com/lampepfl/dotty/pull/784
+and https://github.com/lampepfl/dotty/issues/783
+
+*** CollectEntryPoints
+Collect entry points
+*** LabelDefs
+Verifies that each Label DefDef has only a single address to jump back
+and reorders them such that they are not nested and this address is a
+fall-through address for JVM.
+
+e.g. following code
+
+    <label> def foo(i: Int) = {
+      <label> def bar = 0
+      <label> def dough(i: Int) = if (i == 0) bar else foo(i-1)
+      dough(i)
+      }
+
+    foo(100)
+
+will get rewritten to
+                                                 \
+    <label> def foo(i: Int) = dough(i)
+    <label> def dough(i: Int) = if (i == 0) bar else foo(i-1)
+    <label> def bar = 2
+      foo(100)
+
+Proposed way to generate this pattern in backend is:
+
+     foo(100)
+     <jump foo>
+     <label> def foo(i: Int) = dough(i)
+     // <jump a>                           // unreachable
+     <label> def dough(i: Int) = if (i == 0) bar else foo(i-1)
+     // <jump a>                           // unreachable
+     <label> def bar = 2
+     // <jump a>                           // unreachable
+     <asm point a>
+
+Unreachable jumps will be eliminated by local dead code analysis.
+After JVM is smart enough to remove next-line jumps
+
+Note that Label DefDefs can be only nested in Block, otherwise no one
+would be able to call them Other DefDefs are eliminated
+
+** GenBCode
+Generates the code
 * src
 ** dotty
 *** TODO annotation.internal
