@@ -1,0 +1,281 @@
+#+STARTUP: indent
+
+* Concepts
+** Tasty
+** miniphases
+** call graph analysis
+** symbol, denotation, type
+
+* Types
+
+* Tree
+#+BEGIN_SRC Scala
+type Modifiers = Trees.Modifiers[T]
+type Tree = Trees.Tree[T]
+type TypTree = Trees.TypTree[T]
+type TermTree = Trees.TermTree[T]
+type PatternTree = Trees.PatternTree[T]
+type DenotingTree = Trees.DenotingTree[T]
+type ProxyTree = Trees.ProxyTree[T]
+type NameTree = Trees.NameTree[T]
+type RefTree = Trees.RefTree[T]
+type DefTree = Trees.DefTree[T]
+type MemberDef = Trees.MemberDef[T]
+type ValOrDefDef = Trees.ValOrDefDef[T]
+
+type Ident = Trees.Ident[T]
+type BackquotedIdent = Trees.BackquotedIdent[T]
+type Select = Trees.Select[T]
+type SelectWithSig = Trees.SelectWithSig[T]
+type This = Trees.This[T]
+type Super = Trees.Super[T]
+type Apply = Trees.Apply[T]
+type TypeApply = Trees.TypeApply[T]
+type Literal = Trees.Literal[T]
+type New = Trees.New[T]
+type Pair = Trees.Pair[T]
+type Typed = Trees.Typed[T]
+type NamedArg = Trees.NamedArg[T]
+type Assign = Trees.Assign[T]
+type Block = Trees.Block[T]
+type If = Trees.If[T]
+type Closure = Trees.Closure[T]
+type Match = Trees.Match[T]
+type CaseDef = Trees.CaseDef[T]
+type Return = Trees.Return[T]
+type Try = Trees.Try[T]
+type SeqLiteral = Trees.SeqLiteral[T]
+type JavaSeqLiteral = Trees.JavaSeqLiteral[T]
+type TypeTree = Trees.TypeTree[T]
+type SingletonTypeTree = Trees.SingletonTypeTree[T]
+type SelectFromTypeTree = Trees.SelectFromTypeTree[T]
+type AndTypeTree = Trees.AndTypeTree[T]
+type OrTypeTree = Trees.OrTypeTree[T]
+type RefinedTypeTree = Trees.RefinedTypeTree[T]
+type AppliedTypeTree = Trees.AppliedTypeTree[T]
+type ByNameTypeTree = Trees.ByNameTypeTree[T]
+type TypeBoundsTree = Trees.TypeBoundsTree[T]
+type Bind = Trees.Bind[T]
+type Alternative = Trees.Alternative[T]
+type UnApply = Trees.UnApply[T]
+type ValDef = Trees.ValDef[T]
+type DefDef = Trees.DefDef[T]
+type TypeDef = Trees.TypeDef[T]
+type Template = Trees.Template[T]
+type Import = Trees.Import[T]
+type PackageDef = Trees.PackageDef[T]
+type Annotated = Trees.Annotated[T]
+type Thicket = Trees.Thicket[T]
+#+END_SRC
+** TypTree
+*** ByNameTypeTree
+=\=> T=
+*** TypeBoundsTree
+=lo >: T <: hi=
+*** ContextBounds                                                     :untpd:
+** TermTree
+*** Literal
+*** New
+*** Pair
+*** Assign
+=name = arg=, outside a parameter list
+*** Block
+={ stats; expr }=
+*** If
+=if cond then thenp else elsep=
+*** Closure
+*** Match
+=selector match { cases }=
+**** CaseDef < Tree
+*** Return
+*** Try
+*** SeqLiteral
+*** JavaSeqLiteral
+*** ParsedTry                                                         :untpd:
+*** SymbolLit                                                         :untpd:
+*** InterpolatedString                                                :untpd:
+*** Throw                                                             :untpd:
+*** WhileDo                                                           :untpd:
+*** DoWhile                                                           :untpd:
+*** ForYield                                                          :untpd:
+*** ForDo                                                             :untpd:
+** PatternTree
+*** Alternative
+=tree_1 | ... | tree_n=
+*** UnApply
+The typed translation of `extractor(patterns)` in a pattern.
+** ProxyTree
+*** Super < TermTree
+*** GenericApply < TermTree
+**** Apply
+**** TypeApply
+*** Typed < TermTree
+*** RefinedTypeTree < TypTree
+=tpt { refinements }=
+*** AppliedTypeTree < TypTree
+=tpt[args]=
+*** PackageDef
+=package pid { stats }=
+*** Annotated
+=arg @annot=
+*** TypedSplice                                                       :untpd:
+*** Parens                                                            :untpd:
+** DenotingTree
+*** NameTree
+**** RefTree
+***** Ident
+****** BackquotedIdent
+***** Select
+****** SelectWithSig
+***** SelectFromTypeTree
+=qualifier # name=
+***** AndTypeTree
+=left & right=
+***** OrTypeTree
+=left | right=
+**** Bind < DefTree PatternTree
+=name @ body=
+*** This < TermTree
+*** DefTree
+**** MemberDef < NameTree
+***** ValOrDefDef < WithLazyField
+****** ValDef
+=tpt = rhs=
+******* EmptyValDef
+****** DefDef
+=mods def name[tparams](vparams_1)...(vparams_n): tpt = rhs=
+***** TypeDef
+****** PolyTypeDef                                                    :untpd:
+****** DerivedTypeTree                                                :untpd:
+***** ModuleDef                                                       :untpd:
+**** Template < WithLazyField
+=extends parents { self => body }=
+**** PatDef                                                           :untpd:
+*** TypeTree < TypTree
+A type tree that represents an existing or inferred type
+*** SingletonTypeTree
+=ref.type=
+*** Import
+=import expr.selectors=
+** NamedArg
+=name = arg=, in a parameter list
+** WithoutTypeOrPos
+** Thicket
+** OpTree                                                             :untpd:
+*** InfixOp                                                           :untpd:
+*** PostfixOp                                                         :untpd:
+*** PrefixOp                                                          :untpd:
+** Function                                                           :untpd:
+** Tuple                                                              :untpd:
+** GenFrom                                                            :untpd:
+** GenAlias                                                           :untpd:
+* Phases
+Defined in =Compiler=.
+
+** FrontEnd
+- parse          :: parse code
+- enterSyms      :: index sysmbols
+- typeCheck      :: type checking
+
+#+BEGIN_SRC Scala
+  def phases: List[List[Phase]] =
+    List(
+      List(new FrontEnd),
+      List(new PostTyper),
+      List(new Pickler),
+      List(new FirstTransform,
+           new CheckReentrant),
+      List(new RefChecks,
+           new ElimRepeated,
+           new NormalizeFlags,
+           new ExtensionMethods,
+           new ExpandSAMs,
+           new TailRec,
+           new LiftTry,
+           new ClassOf),
+      List(new PatternMatcher,
+           new ExplicitOuter,
+           new ExplicitSelf,
+           new CrossCastAnd,
+           new Splitter),
+      List(new VCInlineMethods,
+           new SeqLiterals,
+           new InterceptedMethods,
+           new Getters,
+           new ElimByName,
+           new AugmentScala2Traits,
+           new ResolveSuper),
+      List(new Erasure),
+      List(new ElimErasedValueType,
+           new VCElideAllocations,
+           new Mixin,
+           new LazyVals,
+           new Memoize,
+           new LinkScala2ImplClasses,
+           new NonLocalReturns,
+           new CapturedVars, // capturedVars has a transformUnit: no phases should introduce local mutable vars here
+           new Constructors, // constructors changes decls in transformTemplate, no InfoTransformers should be added after it
+           new FunctionalInterfaces,
+           new GetClass),   // getClass transformation should be applied to specialized methods
+      List(new LambdaLift,   // in this mini-phase block scopes are incorrect. No phases that rely on scopes should be here
+           new ElimStaticThis,
+           new Flatten,
+           // new DropEmptyCompanions,
+           new RestoreScopes),
+      List(new ExpandPrivate,
+           new CollectEntryPoints,
+           new LabelDefs),
+      List(new GenBCode)
+    )
+#+END_SRC
+
+* src
+** dotty
+*** TODO annotation.internal
+*** TODO runtime
+*** tools
+**** TODO backend.jvm
+**** dotc
+***** TODO ast
+***** TODO config
+***** TODO core
+***** TODO parsing
+***** TODO printing
+***** TODO repl
+***** TODO reporting
+***** TODO transform
+***** TODO typer
+***** TODO util
+***** Bench
+=object Bench extends Driver=
+For performance testing
+***** CompilationUnit
+- Represents a compilation unit.
+- untyped tree: =var untpdTree: untpd.Tree=
+- typed tree: =var tpdTree: tpd.Tree=
+
+****** TODO picklers: =var picklers: Map[ClassSymbol, TastyPickler]=
+****** TODO unpickers: =var unpicklers: Map[ClassSymbol, TastyUnpickler]=
+
+***** Compiler                                                    :important:
+This class defines the compiler processing flow, and set up the context.
+***** Driver                                                      :important:
+=abstract class Driver extends DotClass=
+Uses =Compiler= to run compilation
+***** FromTasty
+=object FromTasty extends Driver=
+Compiler for Tasty files
+***** Resident
+=class Resident extends Driver=
+A compiler which stays resident between runs
+***** Run
+=class Run(comp: Compiler)(implicit ctx: Context)=
+Used in =Compiler= to define a running of the compiler
+**** TODO io
+*** TODO object DottyPredef
+*** TODO object language
+*** TODO class Pair[T, U](x: T, y: U)
+*** TODO class Singleton
+
+** TODO scala
+** TODO strawman.collection
