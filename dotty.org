@@ -7,6 +7,8 @@
 ** miniphases
 ** call graph analysis
 ** symbol, denotation, type
+** signature
+** context
 
 * Types
 Type -+- ProxyType --+- NamedType ----+--- TypeRef
@@ -748,9 +750,250 @@ Generates the code
 *** tools
 **** TODO backend.jvm
 **** dotc
-***** TODO ast
-***** TODO config
+***** ast
+Tree definitions and desugaring
+****** desugar
+****** Positioned
+****** tpd
+typed tree
+****** TreeInfo
+****** Trees
+****** untpd
+untyped tree
+***** config
+Configuration settings of compilation
 ***** TODO core
+****** classfile
+java classfile manipulation
+****** tasty
+tasty format manipulation
+****** Annotations
+modelling of annotations
+****** CheckRealizable
+Check realizability of types, used in typer.Checking
+****** Constants
+value tags definition
+****** Constraint
+base class for representing constraints in local type inference
+****** ConstraintHandling
+Methods for adding constraints and solving them.
+
+What goes into a Constraint as opposed to a ConstrainHandler?
+
+Constraint code is purely functional: Operations get constraints and
+produce new ones.  Constraint code does not have access to a
+type-comparer. Anything regarding lubs and glbs has to be done
+elsewhere.
+
+By comparison: Constraint handlers are parts of type comparers and can
+use their functionality.  Constraint handlers update the current
+constraint as a side effect.
+****** Contexts
+A context is passed basically everywhere in dotc. This is convenient
+but carries the risk of captured contexts in objects that turn into
+space leaks. To combat this risk, here are some conventions to follow:
+
+- Never let an implicit context be an argument of a class whose
+  instances live longer than the context.
+
+- Classes that need contexts for their initialization take an explicit
+  parameter named `initctx`. They pass initctx to all positions where
+  it is needed (and these positions should all be part of the
+  intialization sequence of the class).
+
+- Classes that need contexts that survive initialization are instead
+  passed a "condensed context", typically named `cctx` (or they create
+  one). Condensed contexts just add some basic information to the
+  context base without the risk of capturing complete trees.
+
+- To make sure these rules are kept, it would be good to do a sanity
+  check using bytecode inspection with javap or scalap: Keep track of
+  all class fields of type context; allow them only in whitelisted
+  classes (which should be short-lived).
+
+****** Decorators
+provides useful implicit decorators for types defined elsewhere
+
+****** Definitions
+defines symbols and types of standard definitions
+
+****** Denotations
+Denotations represent the meaning of symbols and named types.  The
+following diagram shows how the principal types of denotations and
+their denoting entities relate to each other. Lines ending in a
+down-arrow `v` are member methods. The two methods shown in the
+diagram are "symbol" and "deref". Both methods are parameterized by
+the current context, and are effectively indexed by current period.
+
+Lines ending in a horizontal line mean subtying (right is a subtype of left).
+
+NamedType------TermRefWithSignature
+  |                    |                     Symbol---------ClassSymbol
+  |                    |                       |                |
+  | denot              | denot                 | denot          | denot
+  v                    v                       v                v
+Denotation-+-----SingleDenotation-+------SymDenotation-+----ClassDenotation
+           |                      |
+           +-----MultiDenotation  |
+                                  |
+                                  +--UniqueRefDenotation
+                                  +--JointRefDenotation
+
+Here's a short summary of the classes in this diagram.
+
+NamedType                A type consisting of a prefix type and a name, with fields
+                            prefix: Type
+                            name: Name
+                         It has two subtypes: TermRef and TypeRef
+TermRefWithSignature     A TermRef that has in addition a signature to select an overloaded variant, with new field
+                            sig: Signature
+Symbol                   A label for a definition or declaration in one compiler run
+ClassSymbol              A symbol representing a class
+Denotation               The meaning of a named type or symbol during a period
+MultiDenotation          A denotation representing several overloaded members
+SingleDenotation         A denotation representing a non-overloaded member or definition, with main fields
+                            symbol: Symbol
+                            info: Type
+UniqueRefDenotation      A denotation referring to a single definition with some member type
+JointRefDenotation       A denotation referring to a member that could resolve to several definitions
+SymDenotation            A denotation representing a single definition with its original type, with main fields
+                            name: Name
+                            owner: Symbol
+                            flags: Flags
+                            privateWithin: Symbol
+                            annotations: List[Annotation]
+ClassDenotation          A denotation representing a single class definition.
+
+****** DenotTransformers
+defines following traits for denotation transformation
+- DenotTransformer < Phase
+  - InfoTransformer
+  - SymTransformer
+
+****** Flags
+defines =FlagSet=
+
+A FlagSet represents a set of flags. Flags are encoded as follows: The
+first two bits indicate whether a flagset applies to terms, to types,
+or to both.  Bits 2..63 are available for properties and can be doubly
+used for terms and types.
+
+Combining two FlagSets with `|` will give a FlagSet that has the
+intersection of the applicability to terms/types of the two flag
+sets. It is checked that the intersection is not empty.
+
+****** Hashable
+defines the trait =Hashable=
+
+****** NameOps
+operations related to names
+
+****** Names
+defines =Name=.
+
+A name is essentially a string, with three differences:
+
+1. Names belong in one of two name spaces: they are type names or term
+   names. Term names have a sub-category of "local" field names. The
+   same string can correspond a name in each of the three namespaces.
+
+2. Names are hash-consed. Two names representing the same string in
+   the same universe are always reference identical.
+
+3. Names are intended to be encoded strings. @see
+   dotc.util.NameTransformer. The encoding will be applied when
+   converting a string to a name.
+
+****** OrderingConstraint
+Constraint over undetermined type parameters that keeps separate maps
+to reflect parameter orderings.
+
+****** Periods
+Periods are the central "clock" of the compiler. A period consists of
+a run id and a phase id.  run ids represent compiler runs phase ids
+represent compiler phases.
+
+****** Phases
+Compilation phases
+
+****** Scopes
+A scope contains a set of symbols. It can be an extension of some
+outer scope, from which it inherits all symbols.  This class does not
+have any methods to add symbols to a scope or to delete them. These
+methods are provided by subclass MutableScope.
+
+****** Signature
+The signature of a denotation.
+
+Overloaded denotations with the same name are distinguished by their
+signatures. A signature of a method (of type PolyType,MethodType, or
+ExprType) is composed of a list of signature names, one for each
+parameter type, plus a signature for the result type. Methods are
+uncurried before taking their signatures.  The signature name of a
+type is the fully qualified name of the type symbol of the type's
+erasure.
+
+For instance a definition
+
+    def f(x: Int)(y: List[String]): String
+
+would have signature
+
+    Signature(
+      List("scala.Int".toTypeName, "scala.collection.immutable.List".toTypeName),
+      "scala.String".toTypeName)
+
+The signatures of non-method types are always `NotAMethod`.
+
+****** StdNames
+standard names
+
+****** Substituters
+Substitution operations on types
+
+****** TODO SymbolLoaders
+****** Symbols
+Creation methods for symbols
+
+****** SymDenotations
+methods for SymDenotion creation
+
+****** TypeApplications                                           :important:
+type application
+
+****** TypeComparer                                               :important:
+Provides methods to compare types
+
+****** TypeErasure                                                :important:
+Erased types are:
+
+ErasedValueType
+TypeRef(prefix is ignored, denot is ClassDenotation)
+TermRef(prefix is ignored, denot is SymDenotation)
+JavaArrayType
+AnnotatedType
+MethodType
+ThisType
+SuperType
+ClassInfo (NoPrefix, ...)
+NoType
+NoPrefix
+WildcardType
+ErrorType
+
+only for isInstanceOf, asInstanceOf: PolyType, PolyParam, TypeBounds
+
+****** TODO TypeOps
+****** TODO TyperState
+MutableTyperState
+
+****** TODO Types                                                 :important:
+****** Uniques
+Defines operation `unique` for hash-consing types.  Also defines
+specialized hash sets for hash consing uniques of a specific type.
+All sets offer a `enterIfNew` method which checks whether a type with
+the given parts exists already and creates a new one if not.
+
 ***** TODO parsing
 recursive-descent parsing
 ***** TODO printing
