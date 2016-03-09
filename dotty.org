@@ -9,7 +9,34 @@
 ** symbol, denotation, type
 
 * Types
-
+Type -+- ProxyType --+- NamedType ----+--- TypeRef
+      |              |                 \
+      |              +- SingletonType-+-+- TermRef
+      |              |                |
+      |              |                +--- ThisType
+      |              |                +--- SuperType
+      |              |                +--- ConstantType
+      |              |                +--- MethodParam
+      |              |                +----RefinedThis
+      |              |                +--- SkolemType
+      |              +- PolyParam
+      |              +- RefinedType
+      |              +- TypeBounds
+      |              +- ExprType
+      |              +- AnnotatedType
+      |              +- TypeVar
+      |
+      +- GroundType -+- AndType
+                     +- OrType
+                     +- MethodType -----+- ImplicitMethodType
+                     |                  +- JavaMethodType
+                     +- PolyType
+                     +- ClassInfo
+                     |
+                     +- NoType
+                     +- NoPrefix
+                     +- ErrorType
+                     +- WildcardType
 * Tree
 #+BEGIN_SRC Scala
 type Modifiers = Trees.Modifiers[T]
@@ -229,7 +256,7 @@ Defined in =Compiler=.
 ** FrontEnd                                                       :important:
 1. parse          :: parse code
 2. enterSyms      :: index sysmbols
-3. typeCheck      :: type checking
+3. typeCheck      :: type checking, desugaring
 ** PostTyper
 A macro transform that runs immediately after typer and that performs
 the following functions:
@@ -671,7 +698,7 @@ See discussion in https://github.com/lampepfl/dotty/pull/784
 and https://github.com/lampepfl/dotty/issues/783
 
 *** CollectEntryPoints
-Collect entry points
+Collect entry points, used for backend code generration
 *** LabelDefs
 Verifies that each Label DefDef has only a single address to jump back
 and reorders them such that they are not nested and this address is a
@@ -725,6 +752,7 @@ Generates the code
 ***** TODO config
 ***** TODO core
 ***** TODO parsing
+recursive-descent parsing
 ***** TODO printing
 ***** TODO repl
 ***** TODO reporting
