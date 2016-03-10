@@ -762,7 +762,7 @@ typed tree
 untyped tree
 ***** config
 Configuration settings of compilation
-***** TODO core
+***** core
 ****** classfile
 java classfile manipulation
 ****** tasty
@@ -994,14 +994,325 @@ specialized hash sets for hash consing uniques of a specific type.
 All sets offer a `enterIfNew` method which checks whether a type with
 the given parts exists already and creates a new one if not.
 
-***** TODO parsing
+***** parsing
 recursive-descent parsing
-***** TODO printing
-***** TODO repl
-***** TODO reporting
-***** TODO transform
-***** TODO typer
-***** TODO util
+***** printing
+printing of various objects
+***** repl
+read-eval-print loop
+***** reporting
+handle diagnostics output
+***** transform
+****** AugmentScala2Traits
+This phase augments Scala2 traits with implementation classes and with
+additional members needed for mixin composition.
+
+These symbols would have been added between Unpickling and Mixin in
+the Scala2 pipeline.  Specifcally, it adds
+
+ - an implementation class which defines a trait constructor and trait
+   method implementations
+ - trait setters for vals defined in traits
+
+Furthermore, it expands the names of all private getters and setters
+as well as super accessors in the trait and makes them not-private.
+****** TODO CapturedVars
+****** CheckReentrant
+A no-op transform that checks whether the compiled sources are re-entrant.
+****** ClassOf
+Rewrite =classOff=
+****** CollectEntryPoints
+collect entry points
+****** Constructors
+This transform
+- moves initializers from body to constructor.
+- makes all supercalls explicit
+- also moves private fields that are accessed only from constructor
+  into the constructor if possible.
+****** CrossCastAnd
+This transform makes sure that all private member selections from
+AndTypes are performed from the first component of AndType.  This is
+needed for correctness of erasure. See `tests/run/PrivateAnd.scala`
+****** CtxLazy
+Utility class for lazy values whose evaluation depends on a context.
+****** ElimByName
+eliminates ExprTypes `=> T` as types of function parameters, and
+replaces them by nullary function types
+****** ElimErasedValueType
+erases value class to their underlying type.
+****** ElimRepeated
+replaces repeated parameters (*T) with Seq types
+****** ElimStaticThis
+peplace =This= references to module classes in static methods by global
+identifiers to the corresponding modules.
+****** ExpandPrivate
+Make private term members that are accessed from another class
+non-private by resetting the Private flag and expanding their name.
+****** ExpandSAMs
+Expand SAM closures that cannot be represented by the JVM as lambdas
+to anonymous classes.
+****** ExplicitOuter
+adds outer accessors to classes and traits that need them
+****** ExplicitSelf
+Transform references of the form
+
+   C.this.m
+
+where `C` is a class with explicit self type and `C` is not a subclass
+of the owner of `m` to
+
+   C.this.asInstanceOf[S].m
+
+where `S` is the self type of `C`.
+****** ExtensionMethods
+Perform Step 1 in the value classes SIP: Creates extension methods for
+all methods in a value class, except parameter or super accessors, or
+constructors.
+****** FirstTransform
+The first tree transform
+- ensures there are companion objects for all classes except module classes
+- eliminates some kinds of trees: Imports, NamedArgs
+- stubs out native methods
+****** Flatten
+Lift nested classes to toplevel
+****** FullParameterization
+Provides methods to produce fully parameterized versions of instance
+methods, where the `this` of the enclosing class is abstracted out in
+an extra leading `$this` parameter and type parameters of the class
+become additional type parameters of the fully parameterized method.
+****** FunctionalInterfaces
+Rewires closures to implement more specific types of Functions.
+****** GetClass
+Rewrite `getClass` calls as follow:
+
+For every instance of primitive class C whose boxed class is called B:
+
+   instanceC.getClass    -> B.TYPE
+
+For every instance of non-primitive class D:
+
+   instanceD.getClass    -> instanceD.getClass
+****** Getters
+Rewrite fields of a class
+****** InterceptedMethods
+Replace member references as follows:
+
+- `x != y` for != in class Any becomes `!(x == y)` with == in class Any.
+- `x.##` for ## in NullClass becomes `0`
+- `x.##` for ## in Any becomes calls to ScalaRunTime.hash,
+    using the most precise overload available
+- `x.getClass` for getClass in primitives becomes `x.getClass` with
+  getClass in class Object.
+
+****** LambdaLift
+Lift lambdas to toplevel
+
+****** LazyVals
+transform lazy variables
+
+****** LiftTry
+Lifts try's that might be executed on non-empty expression stacks
+to their own methods. I.e.
+
+    try body catch handler
+
+is lifted to
+
+    { def liftedTree$n() = try body catch handler; liftedTree$n() }
+
+****** LinkScala2ImplClasses
+Rewrite calls
+
+    super[M].f(args)
+
+where M is a Scala2 trait implemented by the current class to
+
+    M$class.f(this, args)
+
+provided the implementation class M$class defines a corresponding
+function `f`.
+
+****** MacroTransform
+A base class for transforms.
+
+****** Memoize
+Provides the implementations of all getters and setters, introducing
+fields to hold the value accessed by them.
+
+****** Mixin
+transformations with mixin
+
+****** MixinOps
+operations with mixin
+
+****** NonLocalReturns
+Implement non-local returns using NonLocalReturnControl exceptions.
+
+****** NormalizeFlags
+1. Widens all private[this] and protected[this] qualifiers to just
+   private/protected
+2. Sets PureInterface flag for traits that only have pure interface
+   members and that do not have initialization code. A pure interface
+   member is either an abstract or alias type definition or a deferred
+   val or def.
+****** TODO OverridingPairs
+****** ParamForwarding
+For all parameter accessors
+
+    val x: T = ...
+
+if
+
+1. x is forwarded in the supercall to a parameter that's also named `x`
+2. the superclass parameter accessor for `x` is accessible from the
+   current class
+
+change the accessor to
+
+    def x: T = super.x.asInstanceOf[T]
+
+Do the same also if there are intermediate inaccessible parameter
+accessor forwarders.  The aim of this transformation is to avoid
+redundant parameter accessor fields.
+****** PatternMatcher
+eliminates patterns
+****** Pickler
+****** PostTyper
+A macro transform that runs immediately after typer
+****** ResolveSuper
+adds super accessors and method overrides where linearization differs
+from Java's rule for default methods in interfaces.
+****** RestoreScopes
+The preceding lambda lift and flatten phases move symbols to different
+scopes and rename them. This miniphase cleans up afterwards and makes
+sure that all class scopes contain the symbols defined in them.
+****** SeqLiterals
+A transformer that eliminates SeqLiteral's, transforming
+`SeqLiteral(elems)` to an operation equivalent to
+
+    JavaSeqLiteral(elems).toSeq
+
+Instead of `toSeq`, which takes an implicit, the appropriate
+"wrapArray" method is called directly. The reason for this step is
+that JavaSeqLiterals, being arrays keep a precise type after erasure,
+whereas SeqLiterals only get the erased type `Seq`.
+****** Splitter
+makes sure every identifier and select node carries a symbol. To do
+this, certain qualifiers with a union type have to be "splitted" with
+a type test.
+****** SuperAccessors
+transformations related to =super=
+****** SymUtils
+A decorator that provides methods on symbols that are needed in the
+transformer pipeline.
+****** SyntheticMethods
+Synthetic method implementations for case classes, case objects, and
+value classes.Synthetic method implementations for case classes, case
+objects, and value classes.
+****** TailRec
+tail call elimination
+****** TreeChecker
+Run by -Ycheck option after a given phase, this class retypes all
+syntax trees and verifies that the type of each tree node so obtained
+conforms to the type found in the tree node.
+****** TODO TreeExtractors
+****** TODO TreeGen
+****** TreeTransforms
+base class of tree transforms
+****** TypeTestsCasts
+This transform normalizes type tests and type casts, also replacing
+type tests with singleton argument type with reference equality check
+
+Any remaining type tests
+
+- use the object methods $isInstanceOf and $asInstanceOf
+- have a reference type as receiver
+- can be translated directly to machine instructions
+****** TypeUtils
+A decorator that provides methods on types that are needed in the
+transformer pipeline.
+****** ValueClasses
+Methods that apply to user-defined value classes
+****** VCElideAllocations
+elides unnecessary value class allocations
+****** VCInlineMethods
+inlines calls to methods of value classes.
+***** typer
+****** TODO Applications
+****** Checking
+various check: realizability, bounds, etc
+****** ConstFold
+constant folding
+****** ErrorReporting
+error reporting
+****** EtaExpansion
+converts a method reference to a function value.
+
+    abs  ~~~~>  \x -> abs x
+****** FrontEnd
+First phase of compilation: parsing, indexing and typing.
+****** Implicits
+Implicit resolution
+****** ImportInfo
+info relating to an import clause
+****** Inferencing
+type inference
+****** TODO Mode
+****** Namer
+create symbols from definitions and gives them lazy types
+****** TODO ProtoTypes
+****** RefChecks
+checks related to overrides
+****** ReTyper
+A version of Typer that keeps all symbols defined and referenced in a
+previously typed tree.
+****** TypeAssigner
+type assignments
+****** Typer
+type checking facade
+****** VarianceChecker
+check that all top-level definitions in tree are variance correct.
+****** Variances
+variance operations
+***** util
+****** Attachment
+A class inheriting from Attachment.Container supports adding, removing
+and lookup of attachments. Attachments are typed key/value pairs.
+****** Chars
+Contains constants and classifier methods for characters
+****** common
+Common values hoisted out for performance
+****** DotClass
+Adds standard functionality to a class.
+****** FreshNameCreator
+Creates fresh name
+****** HashSet
+A hash set that allows some privileged protected access to its internals
+****** kwords
+test for Scala worksheet
+****** LRUCache
+A least-recently-used cache for Key -> Value computations
+****** NameTransformer
+Provides functions to encode and decode Scala symbolic names
+****** Positions
+A position indicates a range between a start offset and an end offset.
+****** Set
+A common class for lightweight sets
+****** ShowPickled
+display pickled info
+****** SimpleMap
+simple map interface
+****** SixteenNibbles
+An efficient implementation of sequences of 16 indexed elements with
+values 0..15 in a single Long.
+****** SourceFile
+abstraction of a source file
+****** SourcePosition
+A source position is comprised of a position in a source file.
+****** TODO Stats
+****** Util
+a best fit algorithm
+
 ***** Bench
 =object Bench extends Driver=
 For performance testing
