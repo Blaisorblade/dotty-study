@@ -2,6 +2,18 @@
 
 * Questions
 ** Where and how libraries are used?
+* Usage
+** Compile a file
+=./bin/dotc tests/pos/HelloWorld.scala=
+** Show AST after a phase
+=./bin/dotc -Xprint:frontend  examples/hello.scala=
+=./bin/dotc -Xprint:posttyper,refchecks  examples/hello.scala=
+** Stop after a phase
+=./bin/dotc -Ystop-after:refchecks  examples/hello.scala=
+** Print types of each expression
+=./bin/dotc -Xprint:refchecks -Xprint-types examples/hello.scala=
+** Skip a phase
+=./bin/dotc -Xprint:refchecks -Yskip:posttyper examples/hello.scala=
 * Concepts
 ** Tasty
 Interchange format that stores:
