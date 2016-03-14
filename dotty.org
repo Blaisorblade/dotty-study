@@ -12,8 +12,24 @@
 =./bin/dotc -Ystop-after:refchecks  examples/hello.scala=
 ** Print types of each expression
 =./bin/dotc -Xprint:refchecks -Xprint-types examples/hello.scala=
+** Print bounds of type variables
+=./bin/dotc -Xprint:refchecks -Yshow-var-bounds examples/hello.scala=
 ** Skip a phase
 =./bin/dotc -Xprint:refchecks -Yskip:posttyper examples/hello.scala=
+** Output information about classpath
+=./bin/dotc -Ylog-classpath examples/hello.scala=
+** Check tree at the end of a phase
+=./bin/dotc -Ycheck:flatten examples/hello.scala=
+** Show tree positions
+=./bin/dotc -Xprint:posttyper -Yprintpos examples/hello.scala=
+** Check that compiled program does not contain global vars
+=./bin/dotc -Ycheck-reentrant examples/hello.scala=
+** Explain errors in low-level types
+=./bin/dotc -Yexplain-lowlevel examples/hello.scala=
+** Explain type errors in more detail
+=./bin/dotc -explaintypes examples/hello.scala=
+** Use scalajs as backend
+=./bin/dotc -scalajs examples/hello.scala=
 * Concepts
 ** Tasty
 Interchange format that stores:
