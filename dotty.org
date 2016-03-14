@@ -4,11 +4,81 @@
 ** Where and how libraries are used?
 * Concepts
 ** Tasty
+Interchange format that stores:
+
+- Trees
+- Types
+- Positions
+- Custom sections
+
+- Tells how all methods are actually implemented
+- Included for all classes emitted by dotc
+- source code for dependencies
+** call-graph analysis
+CALL-GRAPH ANALYSIS
+
+Detect program entry points, mark them as reachable
+
+For every reachable method:
+
+- mark all methods called from it as reachable
+- track how type params flow to other methods
+- track which trait combinations were instantiated
+
+Paper: Ali K., Rapoport M., Lhoták O., Dolby J., Tip F. Constructing
+Call Graphs of Scala Programs, ECOOP 2014
+
+WHAT CAN LINKER DO?
+
+- smart specialization
+- smart dead code elimination. squeryl: 400 methods vs 1500 methods
+  reachable by proguard
+- convert classes to value classes
+- infer more precise types
+- eliminate virtual dispatch
+- replace vars by vals
+- remove duplicate vals
+
 ** miniphases
-** call graph analysis
+Tree traversal for each phase will break memory locality, slows down
+compilation.
+
+Manually fusion miniphase in one pass improves caching & prefetching,
+improves performance.
+** run VS phase
+Each run will go through all the phases
 ** symbol, denotation, type
+Denotations represent the meaning(type) of symbols and named types for
+a given phase.
+
+Denotation holds information such as name, type, owner for symbols.
 ** signature
+Denotations of methods have a signature (Signature.scala:7), which
+uniquely identifies overloaded methods.
 ** context
+To make the core of compiler functional(NOT pure!), mutable
+information has to be passed in as context.
+
+The Context contains the state of the compiler, for example
+
+- settings
+- freshNames (FreshNameCreator)
+- period (run and phase id)
+- compilationUnit
+- phase
+- tree (current tree)
+- typer (current typer)
+- mode (type checking mode)
+- typerState (for example undetermined type variables)
+
+** scala off-heap
+12 times faster
+
+- Efficient scoped region-based memory allocator
+- Optional low-overhead memory sanitizer for debugging and development
+- Offheap classes as a nice typed API for custom data layout
+- Offheap arrays with direct sequential layout in memory
+- Extensibility to accomodate custom memory allocators
 
 * Types
 Type -+- ProxyType --+- NamedType ----+--- TypeRef
@@ -1346,3 +1416,5 @@ Used in =Compiler= to define a running of the compiler
 
 ** TODO scala
 ** TODO strawman.collection
+* links
+ * [[https://gist.github.com/djspiewak/2ae2570c8856037a7738][Collections Redesign Proposal]]
