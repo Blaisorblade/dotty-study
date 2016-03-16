@@ -2,6 +2,15 @@
 
 * Questions
 ** Where and how libraries are used?
+* Development
+** Run tests locally: `sbt test`
+** How to add a test case?
+*** `tests/pos` - test cases for parsing
+*** `tests/pos-scala2` - test cases for parsing in Scala2 mode
+*** `tests/neg` - test cases that should not compile
+*** `tests/run` - test cases that can run with expected  output in `.check` file
+*** test beginning with `i` are issues # on `lampepfl/dotty`, e.g. `i1059.scala`
+*** test beginning with `t` are issues # on `scala/scala`, e.g. `t1059.scala`
 * Usage
 ** Compile a file
 =./bin/dotc tests/pos/HelloWorld.scala=
@@ -200,7 +209,7 @@ type Thicket = Trees.Thicket[T]
 *** ByNameTypeTree
 =\=> T=
 *** TypeBoundsTree
-=lo >: T <: hi=
+=T >: lo <: hi=
 *** ContextBounds                                                     :untpd:
 ** TermTree
 *** Literal
