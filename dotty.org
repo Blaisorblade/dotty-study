@@ -51,6 +51,8 @@ Interchange format that stores:
 - Tells how all methods are actually implemented
 - Included for all classes emitted by dotc
 - source code for dependencies
+
+[[https://docs.google.com/document/d/1h3KUMxsSSjyze05VecJGQ5H2yh7fNADtIf3chD3_wr0/edit][TASTY Reference Manual]]
 ** call-graph analysis
 CALL-GRAPH ANALYSIS
 
