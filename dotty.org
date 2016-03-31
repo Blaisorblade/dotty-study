@@ -104,12 +104,13 @@ in a context is a symbol. Fixing the meaning of names is the task of
 the typer.
 
 A symbol carries abstract information about the named entity, such as
-type, owner, members for class symbols, accessiblity information
-etc. The context has a `owner: symbol` field, so that all symbols in
-the program form a symbol tree.
+type, owner, members for class symbols, accessiblity information etc.
 
 A symbol NEVER refers to AST definitions of the underlying
 entity. Libraries are loaded as symbol trees.
+
+The context has a `owner: symbol` field, indicating the owner of the
+current AST tree. That's the only indirect link from symbol to trees.
 
 In dotty, the root of the symbol tree is `EmptyPackageClass` or
 `RootClass`. Following function recursively find the symbol refered by
