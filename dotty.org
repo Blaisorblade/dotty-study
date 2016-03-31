@@ -11,6 +11,9 @@
 *** `tests/run` - test cases that can run with expected  output in `.check` file
 *** test beginning with `i` are issues # on `lampepfl/dotty`, e.g. `i1059.scala`
 *** test beginning with `t` are issues # on `scala/scala`, e.g. `t1059.scala`
+** How to create AST trees in code
+- Use helper functions in `untpd._` and `tpd._`.
+- Use helper methods in `TreeOps` (preferred)
 * Usage
 ** Compile a file
 =./bin/dotc tests/pos/HelloWorld.scala=
@@ -87,13 +90,54 @@ improves performance.
 ** run VS phase
 Each run will go through all the phases
 ** symbol, denotation, type
-Denotations represent the meaning(type) of symbols and named types for
-a given phase.
+** names VS symbols, ast VS symbol tree
+Names, just like human names, are strings that refer to some entities,
+such as methods, variables, classes, packages.
 
-Denotation holds information such as name, type, owner for symbols.
-** signature
-Denotations of methods have a signature (Signature.scala:7), which
-uniquely identifies overloaded methods.
+Just like human names can be ambiguous due to same names, names can
+only get exact meaning in a context. The exact meaning of a name in a
+context is a symbol.
+
+A symbol carries abstract information about the named entity, such as
+type, owner, members for class symbols, accessiblity information
+etc. The context has a `owner: symbol` field, so that all symbols in
+the program form a symbol tree.
+
+A symbol NEVER refers to the AST definitions of the underlying
+entity. Libraries are loaded as symbol trees.
+
+In dotty, the root of the symbol tree is `EmptyPackageClass` or
+`RootClass`. Following function recursively find the symbol refered by
+a Name (path):
+
+```
+DenotationsBase.staticRef(path: Name, generateStubs: Boolean = true)(implicit ctx: Context): Denotation
+```
+
+The symbol tree exists in parallel to the AST tree. The usage of names
+in the AST tree creates references to the symbol tree. It's the task
+of the typer to assign the correct links between the symbol tree and
+AST tree.
+
+In dotty, Ident is the most common AST tree node. Ident refers to
+symbols in the symbol tree. An implementation hack here is that the
+link (ident -> symbol) is stored in the `type` field of `Ident` via
+the `NamedType` class.
+
+In dotty, symbol is further split into (symbol, denotation) to enable
+one symbol to have different meanings in different compilation phases.
+Denotations represent the meaning(type) of symbols and named types for
+a given phase. Denotation holds information such as name, type, owner
+for symbols.
+
+Due to the existence of overloaded functions, denotations are still
+ambiguous. So denotations fall into two categories: MultiDenotation
+and SingleDenotation. Signatures are used to uniquely differentiate
+the meaning of names. In AST, there is a special tree for overloaded
+function calls:
+
+SelectWithSig(qualifier: Tree[T], name: Name, val sig: Signature)
+
 ** context
 To make the core of compiler functional(NOT pure!), mutable
 information has to be passed in as context.
@@ -1062,7 +1106,7 @@ Substitution operations on types
 
 ****** TODO SymbolLoaders
 ****** Symbols
-Creation methods for symbols
+Creation methods for symbols. It's mixed in =Context=.
 
 ****** SymDenotations
 methods for SymDenotion creation
@@ -1327,7 +1371,18 @@ conforms to the type found in the tree node.
 ****** TODO TreeExtractors
 ****** TODO TreeGen
 ****** TreeTransforms
-base class of tree transforms
+Base class of tree transforms. For each kind of tree K, there are two
+methods which can be overridden:
+
+prepareForK // return a new TreeTransform which gets applied to the K
+// node and its children
+transformK // transform node of type K
+
+If a transform does not need to visit a node or any of its children,
+it signals this fact by returning a NoTransform from a prepare method.
+
+If all transforms in a group are NoTransforms, the tree is no longer
+traversed.
 ****** TypeTestsCasts
 This transform normalizes type tests and type casts, also replacing
 type tests with singleton argument type with reference equality check
