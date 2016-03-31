@@ -97,13 +97,26 @@ such as methods, variables, classes, packages.
 Just like human names can be ambiguous due to same names, names can
 only get exact meaning in a context. The exact meaning of a name in a
 context is a symbol.
+** AST tree VS Symbol tree
+The source program is represented by the AST tree. Each tree node has
+a type, which is assigned by the typer.
+
+What makes programming interesting is names. Naming is the primary
+means of abstraction in programming. Names, just like human names, are
+strings that refer to some entities, such as methods, variables,
+classes, packages.
+
+Like human names, names can be ambiguous due to duplicate names. Names
+can only get exact meaning in a context. The exact meaning of a name
+in a context is a symbol. Fixing the meaning of names is the task of
+the typer.
 
 A symbol carries abstract information about the named entity, such as
 type, owner, members for class symbols, accessiblity information
 etc. The context has a `owner: symbol` field, so that all symbols in
 the program form a symbol tree.
 
-A symbol NEVER refers to the AST definitions of the underlying
+A symbol NEVER refers to AST definitions of the underlying
 entity. Libraries are loaded as symbol trees.
 
 In dotty, the root of the symbol tree is `EmptyPackageClass` or
