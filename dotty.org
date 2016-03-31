@@ -89,14 +89,6 @@ Manually fusion miniphase in one pass improves caching & prefetching,
 improves performance.
 ** run VS phase
 Each run will go through all the phases
-** symbol, denotation, type
-** names VS symbols, ast VS symbol tree
-Names, just like human names, are strings that refer to some entities,
-such as methods, variables, classes, packages.
-
-Just like human names can be ambiguous due to same names, names can
-only get exact meaning in a context. The exact meaning of a name in a
-context is a symbol.
 ** AST tree VS Symbol tree
 The source program is represented by the AST tree. Each tree node has
 a type, which is assigned by the typer.
