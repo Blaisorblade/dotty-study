@@ -116,25 +116,26 @@ DenotationsBase.staticRef(path: Name, generateStubs: Boolean = true)(implicit ct
 
 The symbol tree exists in parallel to the AST tree. The usage of names
 in the AST tree creates references to the symbol tree. It's the task
-of the typer to assign the correct links between the symbol tree and
-AST tree.
+of the typer to assign the correct links from the AST tree to the
+symbol tree.
 
-In dotty, Ident is the most common AST tree node. Ident refers to
+In dotty, `Ident` is the most common AST tree node. `Ident` refers to
 symbols in the symbol tree. An implementation hack here is that the
 link (ident -> symbol) is stored in the `type` field of `Ident` via
 the `NamedType` class.
 
-In dotty, symbol is further split into (symbol, denotation) to enable
-one symbol to have different meanings in different compilation phases.
-Denotations represent the meaning(type) of symbols and named types for
-a given phase. Denotation holds information such as name, type, owner
-for symbols.
+In dotty, symbol is further split into the pair (symbol, denotation)
+to enable one symbol to have different meanings in different
+compilation phases. Each symbol has immediate access to its
+denotation. Denotations represent the meaning of symbols for a given
+phase. Denotation holds information such as name, type, owner symbol,
+etc.
 
 Due to the existence of overloaded functions, denotations are still
-ambiguous. So denotations fall into two categories: MultiDenotation
-and SingleDenotation. Signatures are used to uniquely differentiate
-the meaning of names. In AST, there is a special tree for overloaded
-function calls:
+ambiguous. In dotty, denotations fall into two categories:
+MultiDenotation and SingleDenotation. Signatures are used to uniquely
+differentiate the meaning of names in a specific context. In AST,
+there is a special tree for overloaded function calls:
 
 SelectWithSig(qualifier: Tree[T], name: Name, val sig: Signature)
 
