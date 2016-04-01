@@ -110,11 +110,12 @@ A symbol NEVER refers to AST definitions of the underlying
 entity. Libraries are loaded as symbol trees.
 
 The context has a `owner: symbol` field, indicating the owner of the
-current AST tree. That's the only indirect link from symbol to trees.
+current AST tree. That's the only indirect link from symbol to AST
+tree.
 
-In dotty, the root of the symbol tree is `EmptyPackageClass` or
-`RootClass`. Following function recursively find the symbol refered by
-a Name (path):
+In dotty, the root of the symbol tree is `RootClass` and
+`RootPackage`. Following function recursively find the symbol refered
+by a Name (path):
 
 ```
 DenotationsBase.staticRef(path: Name, generateStubs: Boolean = true)(implicit ctx: Context): Denotation
@@ -122,13 +123,30 @@ DenotationsBase.staticRef(path: Name, generateStubs: Boolean = true)(implicit ct
 
 The symbol tree exists in parallel to the AST tree. The usage of names
 in the AST tree creates references to the symbol tree. It's the task
-of the typer to assign the correct links from the AST tree to the
-symbol tree.
+of the typer to create the symbol tree from AST tree, and establish
+the correct links from the AST tree to the symbol tree. The typer also
+sets up types for each node of the symbol tree and AST tree.
 
-In dotty, `Ident` is the most common AST tree node. `Ident` refers to
-symbols in the symbol tree. An implementation hack here is that the
-link (ident -> symbol) is stored in the `type` field of `Ident` via
-the `NamedType` class.
+Unlike the AST tree, which is a complete top-down structure, the
+symbol tree is a down-top structure (via `owner: symbol` field). The
+upper-level symbols only have indirect access to lower level symbols
+through types if current symbol represents a class or package.
+
+A class symbol has access to all its member symbols, which are stored
+as part of the type information of a class(ClassInfo). A class symbol
+also has access to its parent class.
+
+In dotty, `Ident` is the AST tree node that invovles names. `Ident`
+refers to symbols in the symbol tree. `Ident` takes `NamedType` as
+type, which could be `TypeRef` or `TermRef`. `TypeRef` refers to a
+prefix#type, `TermRef` refers to prefix#id. Both holds a reference to
+the destination symbol.
+
+Scala supports type members. In the AST, type member definition is
+represented by `TypeDef`, its type is `TypeAlias`. Type member usage
+in AST is represented by `TypeTree[TypeRef(_)]`. The type of the
+`TypeTree` is of `TypeRef`, which refers to the symbol of the type
+member, whose type is `TypeAlias`.
 
 In dotty, symbol is further split into the pair (symbol, denotation)
 to enable one symbol to have different meanings in different
@@ -143,7 +161,9 @@ MultiDenotation and SingleDenotation. Signatures are used to uniquely
 differentiate the meaning of names in a specific context. In AST,
 there is a special tree for overloaded function calls:
 
+```
 SelectWithSig(qualifier: Tree[T], name: Name, val sig: Signature)
+```
 
 ** context
 To make the core of compiler functional(NOT pure!), mutable
