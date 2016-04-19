@@ -1,0 +1,18 @@
+digraph Denotation {
+  rankdir = "BT"
+  ranksep = "1.5"
+  node [fontname = "Helvetica", shape = "box"]
+
+  ClassDenotation -> { SymDenotation }
+  MultiDenotation -> { Denotation }
+  ErrorDenotation -> { NonSymSingleDenotation }
+  UniqueRefDenotation -> { NonSymSingleDenotation }
+  NoDenotation -> { SymDenotation }
+  SingleDenotation -> { Denotation }
+  NonSymSingleDenotation -> { SingleDenotation }
+  NoQualifyingRef -> { ErrorDenotation }
+  PackageClassDenotation -> { ClassDenotation }
+  MissingRef -> { ErrorDenotation }
+  JointRefDenotation -> { NonSymSingleDenotation }
+  SymDenotation -> { SingleDenotation }
+}
