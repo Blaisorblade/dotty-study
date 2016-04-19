@@ -1,0 +1,65 @@
+digraph Phase {
+  rankdir = "LR"
+  ranksep = "1.5"
+  node [fontname = "Helvetica", shape = "box"]
+
+  SomePhase -> { Phase }
+  ElimErasedValueType -> { MiniPhaseTransform InfoTransformer }
+  LiftTry -> { MiniPhase IdentityDenotTransformer }
+  ClassOf -> { MiniPhaseTransform }
+  DenotTransformer -> { Phase }
+  InterceptedMethods -> { MiniPhaseTransform }
+  MiniPhaseTransform -> { MiniPhase }
+  SymTransformer -> { DenotTransformer }
+  Splitter -> { MiniPhaseTransform }
+  PatternMatcher -> { MiniPhaseTransform DenotTransformer }
+  ElimStaticThis -> { MiniPhaseTransform }
+  VCInlineMethods -> { MiniPhaseTransform IdentityDenotTransformer }
+  NoPhase -> { Phase }
+  FunctionalInterfaces -> { MiniPhaseTransform }
+  ExpandPrivate -> { MiniPhaseTransform IdentityDenotTransformer }
+  FirstTransform -> { IdentityDenotTransformer AnnotationTransformer }
+  ExpandSAMs -> { MiniPhaseTransform }
+  TerminalPhase -> { DenotTransformer }
+  CheckReentrant -> { MiniPhaseTransform }
+  RefChecks -> { MiniPhase }
+  TreeChecker -> { SymTransformer }
+  MiniPhase -> { Phase }
+  InfoTransformer -> { DenotTransformer }
+  Erasure -> { DenotTransformer }
+  ResolveSuper -> { MiniPhaseTransform IdentityDenotTransformer }
+  MacroTransform -> { Phase }
+  Pickler -> { Phase }
+  CapturedVars -> { MiniPhase IdentityDenotTransformer }
+  SeqLiterals -> { MiniPhaseTransform }
+  anon -> { TreeTransformer }
+  Flatten -> { MiniPhaseTransform SymTransformer }
+  PostTyper -> { MacroTransform IdentityDenotTransformer }
+  AugmentScala2Traits -> { MiniPhaseTransform IdentityDenotTransformer }
+  ElimRepeated -> { AnnotationTransformer }
+  Diagram -> { MiniPhaseTransform }
+  Getters -> { MiniPhaseTransform SymTransformer }
+  LinkScala2ImplClasses -> { MiniPhaseTransform IdentityDenotTransformer }
+  RestoreScopes -> { MiniPhaseTransform IdentityDenotTransformer }
+  TailRec -> { MiniPhaseTransform DenotTransformer }
+  GetClass -> { MiniPhaseTransform }
+  Constructors -> { MiniPhaseTransform IdentityDenotTransformer }
+  LambdaLift -> { MiniPhase IdentityDenotTransformer }
+  CollectEntryPoints -> { MiniPhaseTransform }
+  ExplicitSelf -> { MiniPhaseTransform }
+  AnnotationTransformer -> { MiniPhaseTransform InfoTransformer }
+  FrontEnd -> { Phase }
+  VCElideAllocations -> { MiniPhaseTransform IdentityDenotTransformer }
+  ExplicitOuter -> { MiniPhaseTransform InfoTransformer }
+  ExtensionMethods -> { MiniPhaseTransform DenotTransformer }
+  LazyVals -> { MiniPhaseTransform IdentityDenotTransformer }
+  CrossCastAnd -> { MiniPhaseTransform }
+  TreeTransformer -> { Phase }
+  ElimByName -> { MiniPhaseTransform InfoTransformer }
+  NonLocalReturns -> { MiniPhaseTransform }
+  Memoize -> { MiniPhaseTransform IdentityDenotTransformer }
+  Mixin -> { MiniPhaseTransform SymTransformer }
+  CheckStatic -> { MiniPhaseTransform }
+  NormalizeFlags -> { MiniPhaseTransform SymTransformer }
+  IdentityDenotTransformer -> { DenotTransformer }
+}
