@@ -1,0 +1,76 @@
+digraph Type {
+  SingletonType -> { TypeProxy, ValueType }
+  TypeAlias -> { TypeBounds }
+  OrType -> { CachedGroundType, AndOrType }
+  NoPrefix -> { CachedGroundType }
+  CachedConstantType -> { ConstantType }
+  ExprType -> { CachedProxyType, TermType, MethodicType }
+  PolyParam -> { ParamType }
+  BoundType -> { CachedProxyType, ValueType }
+  LazyRef -> { UncachedProxyType, ValueType }
+  JavaArrayType -> { CachedGroundType, ValueType }
+  ErrorType -> { UncachedGroundType, ValueType }
+  UncachedProxyType -> { TypeProxy }
+  TermType -> { Type }
+  PolyType -> { CachedGroundType, BindingType, TermType, MethodOrPoly }
+  CachedProxyType -> { TypeProxy, CachedType }
+  SuperType -> { CachedProxyType, SingletonType }
+  RefinedType -> { CachedProxyType, BindingType, ValueType }
+  CachedTypeRef -> { TypeRef }
+  ThisType -> { CachedProxyType, SingletonType }
+  TypeRefWithFixedSym -> { TypeRef, WithFixedSym }
+  TermRef -> { NamedType, SingletonType }
+  ProtoType -> { Type }
+  ParamType -> { BoundType }
+  NarrowCached -> { Type }
+  TypeProxy -> { Type }
+  UncachedGroundType -> { Type }
+  TermRefWithSignature -> { TermRef }
+  ConstantType -> { CachedProxyType, SingletonType }
+  TypeBounds -> { CachedProxyType, TypeType }
+  MethodParam -> { ParamType, SingletonType }
+  CachedAndType -> { AndType }
+  CachedWildcardType -> { WildcardType }
+  CachedTypeAlias -> { TypeAlias }
+  RealTypeBounds -> { TypeBounds }
+  MethodType -> { CachedGroundType, BindingType, TermType, MethodOrPoly, NarrowCached }
+  JavaMethodType -> { MethodType }
+  CachedGroundType -> { Type, CachedType }
+  MethodicType -> { Type }
+  PreHashedRefinedType -> { RefinedType }
+  ValueType -> { Type, ValueTypeOrProto }
+  CachedExprType -> { ExprType }
+  CachedClassInfo -> { ClassInfo }
+  CachedRefinedType -> { RefinedType }
+  CachedSkolemType -> { SkolemType }
+  MethodParamImpl -> { MethodParam }
+  WildcardType -> { WildcardType }
+  TypeRef -> { NamedType }
+  WithFixedSym -> { NamedType }
+  TypeVar -> { CachedProxyType, ValueType }
+  TermRefWithFixedSym -> { TermRef, WithFixedSym }
+  CachedType -> { Type }
+  TypeType -> { Type }
+  ImplicitMethodType -> { MethodType }
+  WildcardType -> { CachedGroundType, TermType }
+  CachedSuperType -> { SuperType }
+  AndType -> { CachedGroundType, AndOrType }
+  NoType -> { CachedGroundType }
+  CachedPolyType -> { PolyType }
+  MethodOrPoly -> { Type, MethodicType }
+  CachedThisType -> { ThisType }
+  AndOrType -> { Type, ValueType }
+  ErrorType -> { ErrorType }
+  CachedJavaArrayType -> { JavaArrayType }
+  SkolemType -> { UncachedProxyType, ValueType, SingletonType }
+  ImportType -> { UncachedGroundType }
+  CachedTermRef -> { TermRef }
+  BindingType -> { Type }
+  CachedOrType -> { OrType }
+  NamedType -> { CachedProxyType, ValueType }
+  RefinedThis -> { BoundType, SingletonType }
+  AnnotatedType -> { UncachedProxyType, ValueType }
+  ClassInfo -> { CachedGroundType, TypeType }
+  CachedMethodType -> { MethodType }
+  ValueTypeOrProto -> { Type, TermType }
+}
