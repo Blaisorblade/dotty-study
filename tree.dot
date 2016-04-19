@@ -1,63 +1,62 @@
 digraph Tree {
-  rankdir = "BT"
+  rankdir = "LR"
   ranksep = "1.5"
   node [fontname = "Helvetica", shape = "box"]
 
   RefTree -> { NameTree }
   ValOrDefDef -> { MemberDef }
-  Bind -> { NameTree, DefTree, PatternTree }
+  Bind -> { NameTree DefTree PatternTree }
   DenotingTree -> { Tree }
   Import -> { DenotingTree }
   ProxyTree -> { Tree }
-  EmptyValDef -> { ValDef, WithoutTypeOrPos }
-  DefDef -> { MemberDef, ValOrDefDef }
-  TypeTree -> { DenotingTree, TypTree }
-  If -> { Tree, TermTree }
+  EmptyValDef -> { ValDef WithoutTypeOrPos }
+  DefDef -> { ValOrDefDef }
+  TypeTree -> { DenotingTree TypTree }
+  If -> { TermTree }
   BackquotedIdent -> { Ident }
-  This -> { DenotingTree, TermTree }
+  This -> { DenotingTree TermTree }
   DefTree -> { DenotingTree }
-  GenericApply -> { ProxyTree, TermTree }
+  GenericApply -> { ProxyTree TermTree }
   NameTree -> { DenotingTree }
-  UnApply -> { Tree, PatternTree }
+  UnApply -> { PatternTree }
   Ident -> { RefTree }
-  Try -> { Tree, TermTree }
-  Typed -> { ProxyTree, TermTree }
+  Try -> { TermTree }
+  Typed -> { ProxyTree TermTree }
   Apply -> { GenericApply }
   NamedArg -> { Tree }
   TypeDef -> { MemberDef }
-  ValDef -> { MemberDef, ValOrDefDef }
-  Super -> { ProxyTree, TermTree }
-  MemberDef -> { NameTree, DefTree }
-  AppliedTypeTree -> { ProxyTree, TypTree }
-  Thicket -> { Tree, WithoutTypeOrPos }
+  ValDef -> { ValOrDefDef }
+  Super -> { ProxyTree TermTree }
+  MemberDef -> { NameTree DefTree }
+  AppliedTypeTree -> { ProxyTree TypTree }
+  Thicket -> { WithoutTypeOrPos }
   TypeApply -> { GenericApply }
   SeqLiteral -> { Tree }
   TermTree -> { Tree }
-  Return -> { Tree, TermTree }
+  Return -> { TermTree }
   TypTree -> { Tree }
-  Template -> { DenotingTree, DefTree }
+  Template -> { DefTree }
   JavaSeqLiteral -> { SeqLiteral }
-  RefinedTypeTree -> { ProxyTree, TypTree }
-  Literal -> { Tree, TermTree }
-  Match -> { Tree, TermTree }
+  RefinedTypeTree -> { ProxyTree TypTree }
+  Literal -> { TermTree }
+  Match -> { TermTree }
   WithoutTypeOrPos -> { Tree }
-  Alternative -> { Tree, PatternTree }
-  Closure -> { Tree, TermTree }
+  Alternative -> { PatternTree }
+  Closure -> { TermTree }
   Annotated -> { ProxyTree }
-  SingletonTypeTree -> { DenotingTree, TypTree }
-  New -> { Tree, TermTree }
-  Block -> { Tree, TermTree }
-  AndTypeTree -> { Tree, TypTree }
+  SingletonTypeTree -> { DenotingTree TypTree }
+  New -> { TermTree }
+  Block -> { TermTree }
+  AndTypeTree -> { TypTree }
   CaseDef -> { Tree }
-  TypeBoundsTree -> { Tree, TypTree }
+  TypeBoundsTree -> { TypTree }
   PackageDef -> { ProxyTree }
   Select -> { RefTree }
   PatternTree -> { Tree }
-  Tree -> {  }
-  Assign -> { Tree, TermTree }
-  OrTypeTree -> { Tree, TypTree }
-  Pair -> { Tree, TermTree }
+  Assign -> { TermTree }
+  OrTypeTree -> { TypTree }
+  Pair -> { TermTree }
   SelectWithSig -> { Select }
   SelectFromTypeTree -> { RefTree }
-  ByNameTypeTree -> { Tree, TypTree }
+  ByNameTypeTree -> { TypTree }
 }
