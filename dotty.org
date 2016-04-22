@@ -1,5 +1,79 @@
 #+STARTUP: indent
 
+* Scala Papers
+** general
+- Scala Language Specification
+- Unifying functional and object-oriented programming with Scala(2014)
+
+** type system
+- A core calculus for Scala type checking(2006)
+- Towards equal rights for higher-kinded types(2007)
+- Generics of a higher kind(2008)
+- Scalable component abstractions(2005)
+- The Essense of Dependent Object Types(2016)
+
+** type classes
+- Poor man’s type classes(2006)
+- Type classes as objects and implicits(2010)
+- Type classes are signatures of abstract types(2013)
+
+** runtime
+- Instant pickles: Generating object-oriented pickler combinators for fast and extensible serialization(2013)
+- Compiling structural types on the JVM: a comparison of reflective and generative techniques from Scala's perspective(2009)
+
+** Compiler
+- Colored local type inference(2001)
+- A typed intermediate language and algorithms for compiling Scala by successive rewritings(2006) PhD thesis
+- Late data layout: unifying data representation transformations(2014)
+- Implementing a type debugger for Scala(2012)
+- When compilers are mirrors(2012)
+- Call Graphs for Languages with Parametric Polymorphism(2016)
+
+** language design
+- Fighting bit rot with types (experience report: Scala collections)(2009)
+- The Scala experiment: can we provide better language support for component systems?(2008)
+- Future-proofing collections: from mutable to persistent to parallel(2011)
+
+** virtualization
+- Scala-Virtualized: linguistic reuse for deep embeddings(2012)
+- Lightweight modular staging: a pragmatic approach to runtime code
+  generation and compiled DSLs(2010)
+- Language virtualization for heterogeneous parallel computing(2010)
+- Lightweight modular staging and embedded compilers(2012) PhD thesis
+
+** macros and metaprogramming
+- Scala macros(2012)
+- Quasiquotes for scala(2013)
+- Yin-Yang: Concealing the deep embedding of DSLs(2014)
+- Reflecting scala(2008)
+- Translation correctness for first-order object-oriented pattern matching(2007)
+- Scala Macros, a Technical Report(2012)
+
+** pattern matching
+- Matching Objects with Patterns(2007)
+- Object-oriented pattern matching(2007) PhD thesis
+
+** DSL
+- Parser combinators in Scala(2008)
+- Staged parser combinators for efficient data processing(2014)
+- Big Data Analytics with Delite(2013)
+- Forge: generating a high performance DSL implementation from a
+  declarative specification(2014)
+- Spiral in scala: towards the systematic construction of generators
+  for performance libraries(2013)
+
+** parallel and distributed computing
+- A generic parallel collection framework
+- Scala actors: Unifying thread-based and event-based programming(2009)
+- On Lock-Free Work-stealing Iterators for Parallel Data Structures(2014)
+- Spores: A type-based foundation for closures in the age of concurrency and distribution(2014)
+- Isolates, channels, and event streams for composable distributed programming(2015)
+
+** effects
+- A flow-insensitive, modular effect system for purity(2013)
+- Lightweight polymorphic effects(2012)
+- Relative Effect Declarations for Lightweight Effect-Polymorphism(2012)
+
 * Questions
 ** Where and how libraries are used?
 * Development
