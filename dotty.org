@@ -76,6 +76,24 @@
 
 * Questions
 ** Where and how libraries are used?
+The file `SymbolLoaders.scala` provides the interface for interacting
+with libraries.
+
+Specifically, the method `ClassfileLoader#doComplete(root)` loads the
+symbol definition for `root` from a class file.
+
+`ClassfileLoader <: SymbolLoader <: LazyType <: UncachedGroundType <: Type`
+
+There are three different concrete loaders corresponding to three
+different library formats:
+
+- java class files
+- scala2 class files
+- tasty files
+
+`ClassSymbol` has a field `associatedFile` which indicated where the
+class file is located.
+
 * Development
 ** Run tests locally: `sbt test`
 ** How to add a test case?
