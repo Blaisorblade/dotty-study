@@ -109,6 +109,8 @@ class file is located.
 * Usage
 ** Compile a file
 =./bin/dotc tests/pos/HelloWorld.scala=
+** Show AST after parsing
+=./bin/dotc -Xprint:parser  examples/hello.scala=
 ** Show AST after a phase
 =./bin/dotc -Xprint:frontend  examples/hello.scala=
 =./bin/dotc -Xprint:posttyper,refchecks  examples/hello.scala=
@@ -182,6 +184,9 @@ improves performance.
 ** run VS phase
 Each run will go through all the phases
 ** AST tree VS Symbol tree
+
+http://docs.scala-lang.org/overviews/reflection/symbols-trees-types
+
 The source program is represented by the AST tree. Each tree node has
 a type, which is assigned by the typer.
 
@@ -312,6 +317,12 @@ Type -+- ProxyType --+- NamedType ----+--- TypeRef
                      +- ErrorType
                      +- WildcardType
 * Tree
+
+A very good introduction about AST trees, though about scalac instead of dotty:
+
+https://github.com/scala-ide/scala-refactoring/raw/thesis-documentation/scala-refactoring.pdf
+
+Initial Code
 #+BEGIN_SRC Scala
 type Modifiers = Trees.Modifiers[T]
 type Tree = Trees.Tree[T]
