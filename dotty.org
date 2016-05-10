@@ -96,6 +96,8 @@ class file is located.
 
 * Development
 ** Run tests locally: `sbt test`
+** How to pretty print AST tree
+http://stackoverflow.com/questions/15718506/scala-how-to-print-case-classes-like-pretty-printed-tree
 ** How to add a test case?
 *** `tests/pos` - test cases for parsing
 *** `tests/pos-scala2` - test cases for parsing in Scala2 mode
