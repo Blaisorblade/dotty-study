@@ -98,6 +98,54 @@ class file is located.
 ** Run tests locally: `sbt test`
 ** How to pretty print AST tree
 http://stackoverflow.com/questions/15718506/scala-how-to-print-case-classes-like-pretty-printed-tree
+
+Actually using following code is more direct instead of depending on a lib:
+
+  implicit class SextAnyTreeString [ A ] ( a : A ) {
+
+    private def indent(s: String)
+    = s.lines.toStream match {
+      case h +: t =>
+        (("- " + h) +: t.map {
+          "| " + _
+        }) mkString "\n"
+      case _ => "- "
+    }
+
+    /**
+      * @return A readable string representation of this value
+      */
+    def treeString
+    : String
+    = a match {
+      case x: Traversable[_] =>
+        x.stringPrefix + ":\n" +
+          x.view
+            .map {
+              _.treeString
+            }
+            .map {
+              indent
+            }
+            .mkString("\n")
+      case x: Product if x.productArity == 0 =>
+        x.productPrefix
+      case x: Product =>
+        x.productPrefix + ":\n" +
+          x.productIterator
+            .map {
+              _.treeString
+            }
+            .map {
+              indent
+            }
+            .mkString("\n")
+      case null =>
+        "null"
+      case _ =>
+        a.toString
+    }
+  }
 ** How to add a test case?
 *** `tests/pos` - test cases for parsing
 *** `tests/pos-scala2` - test cases for parsing in Scala2 mode
