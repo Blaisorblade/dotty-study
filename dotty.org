@@ -96,6 +96,8 @@ class file is located.
 
 * Development
 ** Run tests locally: `sbt test`
+** Run a specific subset of test
+test-only -- --tests=dotc_util,pos_all
 ** How to pretty print AST tree
 http://stackoverflow.com/questions/15718506/scala-how-to-print-case-classes-like-pretty-printed-tree
 
