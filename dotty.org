@@ -161,11 +161,14 @@ Actually using following code is more direct instead of depending on a lib:
 * Usage
 ** Compile a file
 =./bin/dotc tests/pos/HelloWorld.scala=
+** Print the raw AST
+Use the plain-printer
+=dotc2 -Xprint:all -Yprintpos -Yplain-printer hello.scala=
 ** Show AST after parsing
-=./bin/dotc -Xprint:parser  examples/hello.scala=
+=./bin/dotc -Xprint:parser -Yplain-printer  examples/hello.scala=
 ** Show AST after a phase
-=./bin/dotc -Xprint:frontend  examples/hello.scala=
-=./bin/dotc -Xprint:posttyper,refchecks  examples/hello.scala=
+=./bin/dotc -Xprint:frontend  -Yplain-printer examples/hello.scala=
+=./bin/dotc -Xprint:posttyper,refchecks -Yplain-printer examples/hello.scala=
 ** Stop after a phase
 =./bin/dotc -Ystop-after:refchecks  examples/hello.scala=
 ** Print types of each expression
@@ -186,6 +189,8 @@ Actually using following code is more direct instead of depending on a lib:
 =./bin/dotc -Yexplain-lowlevel examples/hello.scala=
 ** Explain type errors in more detail
 =./bin/dotc -explaintypes examples/hello.scala=
+** Prompt at exception
+=./bin/dotc -Xprompt abc.scala=
 ** Use scalajs as backend
 =./bin/dotc -scalajs examples/hello.scala=
 * Concepts
