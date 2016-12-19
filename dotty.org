@@ -191,6 +191,9 @@ Use the plain-printer
 =./bin/dotc -explaintypes examples/hello.scala=
 ** Prompt at exception
 =./bin/dotc -Xprompt abc.scala=
+** Debug typer
+First change `dotty.tools.dotc.config.Printers.typr` to `default`. Then run the command:
+=./bin/dotc -Ylog:frontend test.scala=
 ** Use scalajs as backend
 =./bin/dotc -scalajs examples/hello.scala=
 * Concepts
@@ -334,15 +337,7 @@ The Context contains the state of the compiler, for example
 - typer (current typer)
 - mode (type checking mode)
 - typerState (for example undetermined type variables)
-
-** scala off-heap
-12 times faster
-
-- Efficient scoped region-based memory allocator
-- Optional low-overhead memory sanitizer for debugging and development
-- Offheap classes as a nice typed API for custom data layout
-- Offheap arrays with direct sequential layout in memory
-- Extensibility to accomodate custom memory allocators
+- current scope
 
 * Types
 Type -+- ProxyType --+- NamedType ----+--- TypeRef
