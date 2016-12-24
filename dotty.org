@@ -4,12 +4,12 @@
 ** general
 - Scala Language Specification
 - Unifying functional and object-oriented programming with Scala(2014)
+- Scalable component abstractions(2005)
 
 ** type system
 - A core calculus for Scala type checking(2006)
 - Towards equal rights for higher-kinded types(2007)
 - Generics of a higher kind(2008)
-- Scalable component abstractions(2005)
 - The Essense of Dependent Object Types(2016)
 
 ** type classes
@@ -17,16 +17,14 @@
 - Type classes as objects and implicits(2010)
 - Type classes are signatures of abstract types(2013)
 
-** runtime
-- Instant pickles: Generating object-oriented pickler combinators for fast and extensible serialization(2013)
-- Compiling structural types on the JVM: a comparison of reflective and generative techniques from Scala's perspective(2009)
-
 ** Compiler
+- Local type inference(2000)
 - Colored local type inference(2001)
 - A typed intermediate language and algorithms for compiling Scala by successive rewritings(2006) PhD thesis
 - Late data layout: unifying data representation transformations(2014)
 - Implementing a type debugger for Scala(2012)
 - When compilers are mirrors(2012)
+- Compiling structural types on the JVM: a comparison of reflective and generative techniques from Scala's perspective(2009)
 - Call Graphs for Languages with Parametric Polymorphism(2016)
 
 ** language design
@@ -73,26 +71,6 @@
 - A flow-insensitive, modular effect system for purity(2013)
 - Lightweight polymorphic effects(2012)
 - Relative Effect Declarations for Lightweight Effect-Polymorphism(2012)
-
-* Questions
-** Where and how libraries are used?
-The file `SymbolLoaders.scala` provides the interface for interacting
-with libraries.
-
-Specifically, the method `ClassfileLoader#doComplete(root)` loads the
-symbol definition for `root` from a class file.
-
-`ClassfileLoader <: SymbolLoader <: LazyType <: UncachedGroundType <: Type`
-
-There are three different concrete loaders corresponding to three
-different library formats:
-
-- java class files
-- scala2 class files
-- tasty files
-
-`ClassSymbol` has a field `associatedFile` which indicated where the
-class file is located.
 
 * Development
 ** Run tests locally: `sbt test`
@@ -146,29 +124,7 @@ First change `dotty.tools.dotc.config.Printers.typr` to `default`. Then run the 
 =./bin/dotc -Ylog:frontend test.scala=
 ** Use scalajs as backend
 =./bin/dotc -scalajs examples/hello.scala=
-* Concepts
-** Tasty
-Interchange format that stores:
-
-- Trees
-- Types
-- Positions
-- Custom sections
-
-- Tells how all methods are actually implemented
-- Included for all classes emitted by dotc
-- source code for dependencies
-
-[[https://docs.google.com/document/d/1h3KUMxsSSjyze05VecJGQ5H2yh7fNADtIf3chD3_wr0/edit][TASTY Reference Manual]]
-** miniphases
-Tree traversal for each phase will break memory locality, slows down
-compilation.
-
-Manually fusion miniphase in one pass improves caching & prefetching,
-improves performance.
-** run VS phase
-Each run will go through all the phases
-** AST tree VS Symbol tree
+* Concepts: Trees, Symbols and Types
 
 http://docs.scala-lang.org/overviews/reflection/symbols-trees-types
 
@@ -196,12 +152,8 @@ current AST tree. That's the only indirect link from AST trees to
 symbols.
 
 In dotty, the root of the symbol tree is `RootClass` and
-`RootPackage`. Following function recursively find the symbol refered
-by a Name (path):
-
-```
-DenotationsBase.staticRef(path: Name, generateStubs: Boolean = true)(implicit ctx: Context): Denotation
-```
+`RootPackage`. Each package or class symbol has access to its child
+symbols.
 
 The symbol tree exists in parallel to the AST tree. The usage of names
 in the AST tree creates references to the symbol tree. It's the task
@@ -242,31 +194,10 @@ etc.
 Due to the existence of overloaded functions, denotations are still
 ambiguous. In dotty, denotations fall into two categories:
 MultiDenotation and SingleDenotation. Signatures are used to uniquely
-differentiate the meaning of names in a specific context. In AST,
-there is a special tree for overloaded function calls:
-
-```
-SelectWithSig(qualifier: Tree[T], name: Name, val sig: Signature)
-```
-
-** context
-To make the core of compiler functional(NOT pure!), mutable
-information has to be passed in as context.
-
-The Context contains the state of the compiler, for example
-
-- settings
-- freshNames (FreshNameCreator)
-- period (run and phase id)
-- compilationUnit
-- phase
-- tree (current tree)
-- typer (current typer)
-- mode (type checking mode)
-- typerState (for example undetermined type variables)
-- current scope
+differentiate the meaning of names in a specific context.
 
 * Types
+#+BEGIN_SRC
 Type -+- ProxyType --+- NamedType ----+--- TypeRef
       |              |                 \
       |              +- SingletonType-+-+- TermRef
@@ -295,6 +226,7 @@ Type -+- ProxyType --+- NamedType ----+--- TypeRef
                      +- NoPrefix
                      +- ErrorType
                      +- WildcardType
+#+END_SRC
 * Tree
 
 A very good introduction about AST trees, though about scalac instead of dotty:
@@ -360,107 +292,3 @@ type PackageDef = Trees.PackageDef[T]
 type Annotated = Trees.Annotated[T]
 type Thicket = Trees.Thicket[T]
 #+END_SRC
-** TypTree
-*** ByNameTypeTree
-=\=> T=
-*** TypeBoundsTree
-=T >: lo <: hi=
-*** ContextBounds                                                     :untpd:
-** TermTree
-*** Literal
-*** New
-*** Pair
-*** Assign
-=name = arg=, outside a parameter list
-*** Block
-={ stats; expr }=
-*** If
-=if cond then thenp else elsep=
-*** Closure
-*** Match
-=selector match { cases }=
-**** CaseDef < Tree
-*** Return
-*** Try
-*** SeqLiteral
-*** JavaSeqLiteral
-*** ParsedTry                                                         :untpd:
-*** SymbolLit                                                         :untpd:
-*** InterpolatedString                                                :untpd:
-*** Throw                                                             :untpd:
-*** WhileDo                                                           :untpd:
-*** DoWhile                                                           :untpd:
-*** ForYield                                                          :untpd:
-*** ForDo                                                             :untpd:
-** PatternTree
-*** Alternative
-=tree_1 | ... | tree_n=
-*** UnApply
-The typed translation of `extractor(patterns)` in a pattern.
-** ProxyTree
-*** Super < TermTree
-*** GenericApply < TermTree
-**** Apply
-**** TypeApply
-*** Typed < TermTree
-*** RefinedTypeTree < TypTree
-=tpt { refinements }=
-*** AppliedTypeTree < TypTree
-=tpt[args]=
-*** PackageDef
-=package pid { stats }=
-*** Annotated
-=arg @annot=
-*** TypedSplice                                                       :untpd:
-*** Parens                                                            :untpd:
-** DenotingTree
-*** NameTree
-**** RefTree
-***** Ident
-****** BackquotedIdent
-***** Select
-****** SelectWithSig
-***** SelectFromTypeTree
-=qualifier # name=
-***** AndTypeTree
-=left & right=
-***** OrTypeTree
-=left | right=
-**** Bind < DefTree PatternTree
-=name @ body=
-*** This < TermTree
-*** DefTree
-**** MemberDef < NameTree
-***** ValOrDefDef < WithLazyField
-****** ValDef
-=tpt = rhs=
-******* EmptyValDef
-****** DefDef
-=mods def name[tparams](vparams_1)...(vparams_n): tpt = rhs=
-***** TypeDef
-****** PolyTypeDef                                                    :untpd:
-****** DerivedTypeTree                                                :untpd:
-***** ModuleDef                                                       :untpd:
-**** Template < WithLazyField
-=extends parents { self => body }=
-**** PatDef                                                           :untpd:
-*** TypeTree < TypTree
-A type tree that represents an existing or inferred type
-*** SingletonTypeTree
-=ref.type=
-*** Import
-=import expr.selectors=
-** NamedArg
-=name = arg=, in a parameter list
-** WithoutTypeOrPos
-** Thicket
-** OpTree                                                             :untpd:
-*** InfixOp                                                           :untpd:
-*** PostfixOp                                                         :untpd:
-*** PrefixOp                                                          :untpd:
-** Function                                                           :untpd:
-** Tuple                                                              :untpd:
-** GenFrom                                                            :untpd:
-** GenAlias                                                           :untpd:
-* links
- * [[https://gist.github.com/djspiewak/2ae2570c8856037a7738][Collections Redesign Proposal]]
