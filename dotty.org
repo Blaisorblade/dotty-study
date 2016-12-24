@@ -229,11 +229,6 @@ Type -+- ProxyType --+- NamedType ----+--- TypeRef
 #+END_SRC
 * Tree
 
-A very good introduction about AST trees, though about scalac instead of dotty:
-
-https://github.com/scala-ide/scala-refactoring/raw/thesis-documentation/scala-refactoring.pdf
-
-Initial Code
 #+BEGIN_SRC Scala
 type Modifiers = Trees.Modifiers[T]
 type Tree = Trees.Tree[T]
