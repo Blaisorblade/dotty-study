@@ -27,6 +27,10 @@
 - Compiling structural types on the JVM: a comparison of reflective and generative techniques from Scala's perspective(2009)
 - Call Graphs for Languages with Parametric Polymorphism(2016)
 
+** structural types
+- Whiteoak: introducing structural typing into java(2008)
+- Compiling structural types on the JVM: a comparison of reflective and generative techniques from Scala's perspective(2009)
+
 ** language design
 - Fighting bit rot with types (experience report: Scala collections)(2009)
 - The Scala experiment: can we provide better language support for component systems?(2008)
